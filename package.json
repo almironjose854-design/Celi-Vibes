@@ -1,0 +1,15 @@
+{
+  "name": "celi-vibes-store",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tienda online Celi Vibes con panel admin y backend de upload a Cloudinary.",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js",
+    "check": "node --check server.js && node --check script.js && node --check admin.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

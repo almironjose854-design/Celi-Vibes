@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Administrador | Celi Vibes</title>
+    <meta
+      name="description"
+      content="Panel de administracion de Celi Vibes para gestionar productos, contenido y pedidos."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Sora:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" type="image/svg+xml" href="./assets/logo-celi-vibes.svg" />
+    <link rel="stylesheet" href="./admin.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    <header class="admin-topbar">
+      <a class="back-link" href="./index.html">&lt;- Volver a la tienda</a>
+      <h1 class="admin-brand">
+        <img src="./assets/logo-celi-vibes.svg" alt="Celi Vibes" />
+        <span>Admin</span>
+      </h1>
+      <button id="logoutBtn" class="ghost hidden">Cerrar sesion</button>
+    </header>
+
+    <main class="admin-main">
+      <section id="loginView" class="login-view">
+        <article class="login-card">
+          <p class="kicker">Acceso protegido</p>
+          <h2>Iniciar sesion</h2>
+          <p>Ingresa tus credenciales de administrador para gestionar la tienda.</p>
+          <form id="loginForm" class="grid-form">
+            <div class="field">
+              <label for="loginUser">Usuario</label>
+              <input id="loginUser" type="text" required />
+            </div>
+            <div class="field">
+              <label for="loginPassword">Clave</label>
+              <input id="loginPassword" type="password" required />
+            </div>
+            <button class="primary" type="submit">Ingresar</button>
+            <p id="loginMsg" class="msg"></p>
+          </form>
+          <p class="note">Las credenciales se validan contra el servidor y quedan persistidas.</p>
+        </article>
+      </section>
+
+      <section id="panelView" class="panel-view hidden">
+        <div class="panel-head">
+          <div>
+            <p class="kicker">Panel de gestion</p>
+            <h2>Control total de tienda</h2>
+          </div>
+          <div class="session-box">
+            <span id="sessionLabel">Sesion activa</span>
+          </div>
+        </div>
+
+        <nav id="panelNav" class="panel-nav" aria-label="Navegacion del panel">
+          <button type="button" class="panel-nav-btn" data-target="productsSection">Productos</button>
+          <button type="button" class="panel-nav-btn" data-target="contentSection">Contenido</button>
+          <button type="button" class="panel-nav-btn" data-target="ordersSection">Pedidos</button>
+          <button type="button" class="panel-nav-btn" data-target="reportsSection">Reportes</button>
+          <button type="button" class="panel-nav-btn" data-target="securitySection">Seguridad</button>
+        </nav>
+
+        <section class="metrics-grid">
+          <article>
+            <p>Productos</p>
+            <strong id="metricProducts">0</strong>
+          </article>
+          <article>
+            <p>Categorias</p>
+            <strong id="metricCategories">0</strong>
+          </article>
+          <article>
+            <p>Stock bajo</p>
+            <strong id="metricLowStock">0</strong>
+          </article>
+          <article>
+            <p>Pedidos pendientes</p>
+            <strong id="metricPendingOrders">0</strong>
+          </article>
+          <article>
+            <p>Pedidos totales</p>
+            <strong id="metricOrders">0</strong>
+          </article>
+          <article>
+            <p>Facturacion</p>
+            <strong id="metricRevenue">Gs. 0</strong>
+          </article>
+        </section>
+
+        <section class="layout-grid">
+          <article id="productsSection" class="card products-card panel-section">
+            <div class="card-head">
+              <h3>Productos</h3>
+              <p>Crear, editar, duplicar, eliminar y ajustar precios en bloque.</p>
+            </div>
+
+            <form id="productForm" class="grid-form">
+              <input id="productId" type="hidden" />
+              <div class="field">
+                <label for="productName">Nombre</label>
+                <input id="productName" type="text" required />
+              </div>
+              <div class="field">
+                <label for="productCategory">Categoria</label>
+                <input id="productCategory" type="text" required placeholder="joyeria, belleza..." />
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="productPrice">Precio (Gs.)</label>
+                  <input id="productPrice" type="number" min="1" step="1000" required />
+                </div>
+                <div class="field">
+                  <label for="productRating">Rating (0-5)</label>
+                  <input id="productRating" type="number" min="0" max="5" step="0.1" required />
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="productBadge">Badge</label>
+                  <input id="productBadge" type="text" required />
+                </div>
+                <div class="field">
+                  <label for="productStock">Stock</label>
+                  <input id="productStock" type="number" min="0" step="1" required />
+                </div>
+              </div>
+              <div class="field">
+                <label for="productImage">URL imagen</label>
+                <input id="productImage" type="url" />
+              </div>
+              <div class="field">
+                <label for="productImageFile">Imagen propia (opcional)</label>
+                <input id="productImageFile" type="file" accept="image/*" />
+                <p class="note">
+                  Si seleccionas una imagen, se sube automaticamente por backend al guardar.
+                </p>
+              </div>
+              <div id="productImagePreviewWrap" class="product-image-preview hidden">
+                <img id="productImagePreview" alt="Previsualizacion imagen del producto" />
+              </div>
+              <p id="uploadImageMsg" class="msg"></p>
+              <div class="field">
+                <label for="productDescription">Descripcion</label>
+                <textarea id="productDescription" rows="3" required></textarea>
+              </div>
+              <div class="actions">
+                <button id="saveProductBtn" class="primary" type="submit">Guardar producto</button>
+                <button id="cancelEditBtn" class="ghost hidden" type="button">Cancelar</button>
+              </div>
+              <p id="productMsg" class="msg"></p>
+            </form>
+
+            <div class="tools-row">
+              <div class="field grow">
+                <label for="productSearch">Buscar producto</label>
+                <input id="productSearch" type="search" placeholder="Nombre o categoria" />
+              </div>
+              <div class="field compact">
+                <label for="productCategoryFilter">Categoria</label>
+                <select id="productCategoryFilter">
+                  <option value="all">Todas</option>
+                </select>
+              </div>
+              <div class="field compact">
+                <label for="productStockFilter">Stock</label>
+                <select id="productStockFilter">
+                  <option value="all">Todos</option>
+                  <option value="low">Stock bajo (<= 5)</option>
+                  <option value="out">Sin stock</option>
+                </select>
+              </div>
+              <form id="bulkPriceForm" class="inline-form">
+                <label for="bulkPricePercent">Ajuste %</label>
+                <input id="bulkPricePercent" type="number" step="0.1" placeholder="-10 o 5" required />
+                <button class="ghost" type="submit">Aplicar</button>
+              </form>
+            </div>
+
+            <p id="productTableMeta" class="msg"></p>
+            <div id="productTable" class="product-table"></div>
+          </article>
+
+          <article id="contentSection" class="card panel-section">
+            <div class="card-head">
+              <h3>Contenido publico</h3>
+              <p>Actualiza textos visibles en la pagina principal.</p>
+            </div>
+            <form id="contentForm" class="grid-form">
+              <div class="field">
+                <label for="contentShippingMsg">Topbar 1</label>
+                <input id="contentShippingMsg" type="text" required />
+              </div>
+              <div class="field">
+                <label for="contentSupportMsg">Topbar 2</label>
+                <input id="contentSupportMsg" type="text" required />
+              </div>
+              <div class="field">
+                <label for="contentHeroKicker">Hero kicker</label>
+                <input id="contentHeroKicker" type="text" required />
+              </div>
+              <div class="field">
+                <label for="contentHeroTitle">Hero titulo</label>
+                <textarea id="contentHeroTitle" rows="2" required></textarea>
+              </div>
+              <div class="field">
+                <label for="contentHeroDescription">Hero descripcion</label>
+                <textarea id="contentHeroDescription" rows="3" required></textarea>
+              </div>
+              <div class="field">
+                <label for="contentHeroImage">Hero imagen (URL)</label>
+                <input id="contentHeroImage" type="url" required />
+              </div>
+              <div class="field">
+                <label for="contentHeroButton">Texto boton hero</label>
+                <input id="contentHeroButton" type="text" required />
+              </div>
+              <div class="field">
+                <label for="contentPromoTag">Promo breve</label>
+                <input id="contentPromoTag" type="text" required />
+              </div>
+              <div class="field">
+                <label for="contentPromoTitle">Titulo promo</label>
+                <textarea id="contentPromoTitle" rows="2" required></textarea>
+              </div>
+              <div class="field">
+                <label for="contentPromoButton">Texto boton promo</label>
+                <input id="contentPromoButton" type="text" required />
+              </div>
+              <div class="field">
+                <label for="contentNewsletterTitle">Titulo newsletter</label>
+                <input id="contentNewsletterTitle" type="text" required />
+              </div>
+              <div class="field">
+                <label for="contentNewsletterDescription">Texto newsletter</label>
+                <textarea id="contentNewsletterDescription" rows="2" required></textarea>
+              </div>
+              <button class="primary" type="submit">Guardar contenido</button>
+              <p id="contentMsg" class="msg"></p>
+            </form>
+          </article>
+
+          <article id="ordersSection" class="card orders-card panel-section">
+            <div class="card-head">
+              <h3>Pedidos</h3>
+              <p>Revisa pedidos generados desde checkout y cambia estado.</p>
+            </div>
+            <div class="orders-toolbar">
+              <div id="ordersStatusSummary" class="orders-status-summary"></div>
+              <div class="orders-filters">
+                <div class="field grow">
+                  <label for="ordersSearch">Buscar pedido</label>
+                  <input
+                    id="ordersSearch"
+                    type="search"
+                    placeholder="ID, cliente, telefono o producto"
+                  />
+                </div>
+                <div class="field">
+                  <label for="ordersStatusFilter">Estado</label>
+                  <select id="ordersStatusFilter">
+                    <option value="all">Todos</option>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="confirmado">Confirmado</option>
+                    <option value="enviado">Enviado</option>
+                    <option value="completado">Completado</option>
+                    <option value="cancelado">Cancelado</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="ordersDateFrom">Desde</label>
+                  <input id="ordersDateFrom" type="date" />
+                </div>
+                <div class="field">
+                  <label for="ordersDateTo">Hasta</label>
+                  <input id="ordersDateTo" type="date" />
+                </div>
+              </div>
+              <div class="actions">
+                <button id="ordersResetFilters" class="ghost" type="button">Limpiar filtros</button>
+                <button id="ordersExportCsv" class="ghost" type="button">Exportar CSV</button>
+                <button id="clearCompletedOrders" class="ghost" type="button">Limpiar completados</button>
+              </div>
+              <p id="ordersMsg" class="msg"></p>
+            </div>
+            <div id="ordersList" class="orders-list"></div>
+          </article>
+
+          <article id="reportsSection" class="card reports-card panel-section">
+            <div class="card-head">
+              <h3>Reportes de ventas</h3>
+              <p>Monitorea ingresos, ticket promedio y comportamiento de productos en tiempo real.</p>
+            </div>
+
+            <div class="reports-toolbar">
+              <div class="field">
+                <label for="reportRange">Periodo</label>
+                <select id="reportRange">
+                  <option value="7">Ultimos 7 dias</option>
+                  <option value="30" selected>Ultimos 30 dias</option>
+                  <option value="90">Ultimos 90 dias</option>
+                  <option value="365">Ultimos 12 meses</option>
+                  <option value="all">Todo el historial</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="reportRevenueMode">Ingresos considerados</label>
+                <select id="reportRevenueMode">
+                  <option value="completed" selected>Solo pedidos completados</option>
+                  <option value="active">Pedidos no cancelados</option>
+                  <option value="all">Todos los pedidos</option>
+                </select>
+              </div>
+              <div class="actions">
+                <button id="exportReportsBtn" class="ghost" type="button">Exportar reporte CSV</button>
+              </div>
+            </div>
+
+            <section class="reports-kpis">
+              <article>
+                <p>Pedidos en rango</p>
+                <strong id="reportOrdersCount">0</strong>
+              </article>
+              <article>
+                <p>Ingresos en rango</p>
+                <strong id="reportRevenueTotal">Gs. 0</strong>
+              </article>
+              <article>
+                <p>Ticket promedio</p>
+                <strong id="reportAvgTicket">Gs. 0</strong>
+              </article>
+              <article>
+                <p>Tasa completados</p>
+                <strong id="reportCompletionRate">0%</strong>
+              </article>
+            </section>
+
+            <section class="reports-grid">
+              <article class="report-widget">
+                <div class="report-widget-head">
+                  <h4>Tendencia de ventas</h4>
+                  <p id="reportTrendHint">Ingresos por periodo</p>
+                </div>
+                <div id="reportSalesChart" class="chart-vertical"></div>
+              </article>
+
+              <article class="report-widget">
+                <div class="report-widget-head">
+                  <h4>Top productos</h4>
+                  <p>Productos con mayor salida en el rango</p>
+                </div>
+                <div id="reportTopProductsChart" class="chart-horizontal"></div>
+              </article>
+
+              <article class="report-widget">
+                <div class="report-widget-head">
+                  <h4>Estados de pedidos</h4>
+                  <p>Distribucion operativa actual</p>
+                </div>
+                <div class="status-chart-layout">
+                  <div id="reportStatusDonut" class="status-donut">
+                    <div class="status-donut-center">
+                      <strong>0</strong>
+                      <span>Pedidos</span>
+                    </div>
+                  </div>
+                  <ul id="reportStatusLegend" class="status-legend"></ul>
+                </div>
+              </article>
+            </section>
+
+            <p id="reportsMsg" class="msg"></p>
+          </article>
+
+          <article id="securitySection" class="card panel-section">
+            <div class="card-head">
+              <h3>Seguridad y datos</h3>
+              <p>Gestion de acceso y herramientas de respaldo.</p>
+            </div>
+
+            <form id="securityForm" class="grid-form">
+              <div class="field">
+                <label for="currentUser">Usuario actual</label>
+                <input id="currentUser" type="text" required />
+              </div>
+              <div class="field">
+                <label for="currentPassword">Clave actual</label>
+                <input id="currentPassword" type="password" required />
+              </div>
+              <div class="field">
+                <label for="newUser">Nuevo usuario</label>
+                <input id="newUser" type="text" required />
+              </div>
+              <div class="field">
+                <label for="newPassword">Nueva clave</label>
+                <input id="newPassword" type="password" minlength="6" required />
+              </div>
+              <button class="primary" type="submit">Actualizar credenciales</button>
+              <p id="securityMsg" class="msg"></p>
+            </form>
+
+            <div class="divider"></div>
+
+            <div class="actions">
+              <button id="exportDataBtn" class="ghost" type="button">Exportar respaldo</button>
+              <label class="file-picker" for="importDataInput">Importar respaldo</label>
+              <input id="importDataInput" type="file" accept=".json,application/json" hidden />
+              <button id="resetStoreBtn" class="danger" type="button">Restablecer tienda</button>
+            </div>
+            <p id="dataMsg" class="msg"></p>
+          </article>
+        </section>
+      </section>
+    </main>
+
+    <script src="./admin.js"></script>
+  </body>
+</html>

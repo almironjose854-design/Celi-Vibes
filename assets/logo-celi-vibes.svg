@@ -1,0 +1,122 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 1200 420"
+  role="img"
+  aria-labelledby="logoTitle logoDesc"
+>
+  <title id="logoTitle">Celi Vibes</title>
+  <desc id="logoDesc">Logo floral de Celi Vibes en tonos rosa y dorado.</desc>
+  <defs>
+    <linearGradient id="pinkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d98f92" />
+      <stop offset="100%" stop-color="#ad5856" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f3ddbd" />
+      <stop offset="50%" stop-color="#d7ab75" />
+      <stop offset="100%" stop-color="#b7864f" />
+    </linearGradient>
+    <radialGradient id="flowerCore" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffd167" />
+      <stop offset="100%" stop-color="#cf9824" />
+    </radialGradient>
+  </defs>
+
+  <g transform="translate(32 20)">
+    <path
+      d="M125 304 C 312 182, 617 156, 949 282"
+      fill="none"
+      stroke="url(#goldGrad)"
+      stroke-width="16"
+      stroke-linecap="round"
+      opacity="0.95"
+    />
+    <path
+      d="M164 334 C 440 243, 736 244, 1032 340"
+      fill="none"
+      stroke="#c47774"
+      stroke-width="4"
+      stroke-linecap="round"
+      opacity="0.85"
+    />
+    <path
+      d="M180 352 C 462 269, 756 272, 1042 356"
+      fill="none"
+      stroke="#c98a87"
+      stroke-width="2.8"
+      stroke-linecap="round"
+      opacity="0.9"
+    />
+
+    <text
+      x="188"
+      y="262"
+      fill="url(#pinkGrad)"
+      font-size="252"
+      font-family="'Brush Script MT', 'Segoe Script', 'Lucida Handwriting', cursive"
+      style="font-weight: 700"
+      letter-spacing="-4"
+    >
+      Celi
+    </text>
+    <text
+      x="494"
+      y="314"
+      fill="#b45e5c"
+      font-size="76"
+      font-family="'Sora', 'Segoe UI', sans-serif"
+      letter-spacing="20"
+    >
+      VIBES
+    </text>
+
+    <g transform="translate(861 150)">
+      <g fill="#f6bcc4" opacity="0.96">
+        <ellipse cx="0" cy="-34" rx="19" ry="40" />
+        <ellipse cx="31" cy="-18" rx="19" ry="40" transform="rotate(37 31 -18)" />
+        <ellipse cx="43" cy="14" rx="19" ry="40" transform="rotate(72 43 14)" />
+        <ellipse cx="24" cy="44" rx="19" ry="40" transform="rotate(116 24 44)" />
+        <ellipse cx="-8" cy="49" rx="19" ry="40" transform="rotate(154 -8 49)" />
+        <ellipse cx="-35" cy="31" rx="19" ry="40" transform="rotate(195 -35 31)" />
+        <ellipse cx="-42" cy="-3" rx="19" ry="40" transform="rotate(236 -42 -3)" />
+        <ellipse cx="-27" cy="-31" rx="19" ry="40" transform="rotate(276 -27 -31)" />
+      </g>
+      <circle cx="0" cy="6" r="18" fill="url(#flowerCore)" />
+    </g>
+
+    <path
+      d="M962 188 C 1004 217, 1028 246, 1038 288"
+      fill="none"
+      stroke="#b88d58"
+      stroke-width="4"
+      stroke-linecap="round"
+    />
+    <path
+      d="M972 201 C 998 198, 1014 209, 1028 222 C 1002 225, 986 215, 972 201"
+      fill="url(#goldGrad)"
+      opacity="0.9"
+    />
+    <path
+      d="M1006 229 C 1032 229, 1048 244, 1060 260 C 1032 259, 1018 247, 1006 229"
+      fill="url(#goldGrad)"
+      opacity="0.9"
+    />
+
+    <path
+      d="M1000 300
+         C 1016 286, 1041 288, 1044 313
+         C 1046 331, 1033 347, 1005 365
+         C 976 347, 964 331, 966 313
+         C 970 288, 994 286, 1000 300 Z"
+      fill="url(#pinkGrad)"
+      opacity="0.9"
+    />
+
+    <g fill="#d6a062" opacity="0.72">
+      <path d="M100 146 l6 14 l14 6 l-14 6 l-6 14 l-6 -14 l-14 -6 l14 -6 z" />
+      <path d="M1080 173 l6 14 l14 6 l-14 6 l-6 14 l-6 -14 l-14 -6 l14 -6 z" />
+      <path d="M1034 324 l5 11 l11 5 l-11 5 l-5 11 l-5 -11 l-11 -5 l11 -5 z" />
+      <path d="M548 349 l5 11 l11 5 l-11 5 l-5 11 l-5 -11 l-11 -5 l11 -5 z" />
+    </g>
+  </g>
+</svg>
