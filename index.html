@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Celi Vibes | Moda y accesorios para la mujer</title>
+    <meta
+      name="description"
+      content="Celi Vibes: tienda online de accesorios femeninos, belleza, moda y bienestar para la mujer."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Sora:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" type="image/svg+xml" href="./assets/logo-celi-vibes.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    <header class="topbar">
+      <p id="shippingMsg">Envios a todo Paraguay | Compra minima Gs. 120.000</p>
+      <p id="supportMsg">Atencion por WhatsApp: +595 981 000 000</p>
+    </header>
+
+    <nav class="navbar">
+      <a class="brand" href="#home">
+        <img src="./assets/logo-celi-vibes.svg" alt="Celi Vibes" />
+      </a>
+      <div class="nav-actions">
+        <a href="#catalogo">Catalogo</a>
+        <a href="#promos">Promos</a>
+        <a href="#testimonios">Testimonios</a>
+        <button id="cartButton" class="cart-btn" aria-label="Abrir carrito">
+          Carrito
+          <span id="cartCount">0</span>
+        </button>
+      </div>
+    </nav>
+
+    <main>
+      <section id="home" class="hero reveal">
+        <div class="hero-content">
+          <p id="heroKicker" class="hero-kicker">Boutique online para la mujer actual</p>
+          <h1 id="heroTitle">Accesorios, estilo y vibra femenina en un solo lugar</h1>
+          <p id="heroDescription">
+            Descubri colecciones exclusivas pensadas para potenciar tu look
+            diario, regalar con amor y sentirte increible.
+          </p>
+          <div class="hero-cta">
+            <a id="heroPrimaryBtn" class="btn btn-primary" href="#catalogo">Comprar ahora</a>
+            <button id="openLookbook" class="btn btn-ghost">
+              Ver lookbook
+            </button>
+          </div>
+          <div class="hero-stats">
+            <article>
+              <strong>+2.300</strong>
+              <span>clientas felices</span>
+            </article>
+            <article>
+              <strong>4.9/5</strong>
+              <span>valoracion media</span>
+            </article>
+            <article>
+              <strong>48h</strong>
+              <span>entrega express</span>
+            </article>
+          </div>
+        </div>
+        <div class="hero-art">
+          <img
+            id="heroImage"
+            src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80"
+            alt="Mujer con accesorios de moda"
+          />
+          <div class="floating-card">
+            <p>Nuevo Drop</p>
+            <strong>Elegance Bloom</strong>
+            <span>Hasta 25% off esta semana</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="promos" class="banner reveal">
+        <p id="promoTag">Flash Sale Marzo 2026</p>
+        <h2 id="promoTitle">3x2 en scrunchies premium y 20% off en sets de skincare</h2>
+        <a id="promoButton" class="btn btn-dark" href="#catalogo">Aprovechar promo</a>
+      </section>
+
+      <section id="catalogo" class="catalog reveal">
+        <div class="catalog-head">
+          <div>
+            <p class="section-kicker">Coleccion Celi Vibes</p>
+            <h2>Todo para tu estilo y bienestar</h2>
+          </div>
+          <p class="catalog-note">
+            Productos seleccionados para combinar belleza, funcionalidad y
+            tendencia.
+          </p>
+        </div>
+        <div id="categoryQuickFilters" class="category-quick-filters"></div>
+
+        <div class="catalog-layout">
+          <aside class="filters">
+            <div class="field">
+              <label for="searchInput">Buscar producto</label>
+              <input
+                id="searchInput"
+                type="search"
+                placeholder="Ej: collar, skincare, tote"
+              />
+            </div>
+            <div class="field">
+              <label for="categoryFilter">Categoria</label>
+              <select id="categoryFilter">
+                <option value="all">Todas</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="sortFilter">Ordenar por</label>
+              <select id="sortFilter">
+                <option value="featured">Destacados</option>
+                <option value="price-asc">Precio: menor a mayor</option>
+                <option value="price-desc">Precio: mayor a menor</option>
+                <option value="rating-desc">Mejor valorados</option>
+              </select>
+            </div>
+            <div class="field range">
+              <label for="priceRange">Precio maximo: <span id="rangeValue">450.000</span> Gs.</label>
+              <input
+                id="priceRange"
+                type="range"
+                min="60000"
+                max="450000"
+                step="10000"
+                value="450000"
+              />
+            </div>
+          </aside>
+
+          <div class="catalog-results">
+            <div class="catalog-toolbar">
+              <p id="resultsCount" class="results-count"></p>
+              <button id="clearFiltersBtn" class="small-btn" type="button">
+                Limpiar filtros
+              </button>
+            </div>
+            <div id="activeFilters" class="active-filters"></div>
+            <div id="productGrid" class="product-grid"></div>
+            <p id="emptyState" class="empty hidden">
+              No encontramos productos con ese filtro.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="why reveal">
+        <article>
+          <h3>Curaduria premium</h3>
+          <p>Elegimos cada producto por calidad real, estilo y durabilidad.</p>
+        </article>
+        <article>
+          <h3>Pagos flexibles</h3>
+          <p>Transferencia, QR, tarjeta y cuotas para que compres tranquila.</p>
+        </article>
+        <article>
+          <h3>Atencion personalizada</h3>
+          <p>Te asesoramos por WhatsApp para armar tu combo ideal.</p>
+        </article>
+      </section>
+
+      <section id="testimonios" class="testimonials reveal">
+        <div class="section-title">
+          <p class="section-kicker">Comunidad Celi</p>
+          <h2>Lo que dicen nuestras clientas</h2>
+        </div>
+        <div class="testimonial-grid">
+          <article>
+            <p>
+              "La calidad me sorprendio, el set de collar y aretes llego en 24h
+              y era aun mas lindo en persona."
+            </p>
+            <strong>Sofia R.</strong>
+          </article>
+          <article>
+            <p>
+              "Compre para un regalo y termine quedandome con uno para mi.
+              Excelente presentacion y servicio."
+            </p>
+            <strong>Camila M.</strong>
+          </article>
+          <article>
+            <p>
+              "Mi tienda favorita, siempre tienen novedades que se sienten
+              exclusivas."
+            </p>
+            <strong>Ana V.</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="newsletter reveal">
+        <div>
+          <p class="section-kicker">Club Celi Vibes</p>
+          <h2 id="newsletterTitle">Recibi lanzamientos y descuentos privados</h2>
+          <p id="newsletterDescription">Suscribite y obtene 10% en tu primera compra.</p>
+        </div>
+        <form id="newsletterForm">
+          <input
+            id="newsletterEmail"
+            type="email"
+            required
+            placeholder="Tu email"
+            aria-label="Email"
+          />
+          <button class="btn btn-primary" type="submit">Quiero unirme</button>
+          <p id="newsletterMsg" class="newsletter-msg"></p>
+        </form>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div>
+        <h3>Celi Vibes</h3>
+        <p>Moda, accesorios y bienestar para la mujer moderna.</p>
+      </div>
+      <div>
+        <h4>Contacto</h4>
+        <p>Instagram: @celivibes.py</p>
+        <p>WhatsApp: +595 981 000 000</p>
+      </div>
+      <div>
+        <h4>Metodos de pago</h4>
+        <p>Transferencia, QR, tarjeta, efectivo.</p>
+      </div>
+    </footer>
+
+    <div class="admin-entry-wrap">
+      <a id="adminAccessBtn" class="admin-entry" href="./admin.html" aria-label="Ingresar al administrador">
+        acceso admin
+      </a>
+    </div>
+
+    <a
+      id="floatingWhatsApp"
+      class="floating-whatsapp"
+      href="https://wa.me/595981000000"
+      target="_blank"
+      rel="noopener"
+      aria-label="Contactar por WhatsApp"
+      title="Contactar por WhatsApp"
+    >
+      WhatsApp
+    </a>
+
+    <aside id="cartDrawer" class="cart-drawer" aria-hidden="true">
+      <div class="drawer-head">
+        <h3>Tu carrito</h3>
+        <button id="closeCart" aria-label="Cerrar carrito">X</button>
+      </div>
+      <div id="cartItems" class="cart-items"></div>
+      <div class="drawer-foot">
+        <p>
+          Total:
+          <strong id="cartTotal">Gs. 0</strong>
+        </p>
+        <p id="cartMinOrderHint" class="cart-hint"></p>
+        <button id="checkoutBtn" class="btn btn-primary btn-block">
+          Finalizar compra
+        </button>
+      </div>
+    </aside>
+
+    <div id="overlay" class="overlay" hidden></div>
+
+    <dialog id="productModal" class="product-modal">
+      <button id="closeModal" class="modal-close" aria-label="Cerrar">
+        X
+      </button>
+      <div id="modalBody"></div>
+    </dialog>
+
+    <dialog id="lookbookModal" class="product-modal lookbook">
+      <button id="closeLookbook" class="modal-close" aria-label="Cerrar">
+        X
+      </button>
+      <h2>Lookbook Celi Vibes</h2>
+      <div class="lookbook-grid">
+        <img
+          src="https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=700&q=80"
+          alt="Lookbook 1"
+        />
+        <img
+          src="https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=700&q=80"
+          alt="Lookbook 2"
+        />
+        <img
+          src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=700&q=80"
+          alt="Lookbook 3"
+        />
+      </div>
+    </dialog>
+
+    <dialog id="checkoutModal" class="product-modal checkout-modal">
+      <button id="closeCheckoutModal" class="modal-close" aria-label="Cerrar">
+        X
+      </button>
+      <div class="checkout-shell">
+        <div>
+          <p class="section-kicker">Finalizar pedido</p>
+          <h2>Completa tus datos de contacto</h2>
+          <p class="checkout-copy">
+            Con esto te confirmamos stock, pago y envio cuando tu pedido aparezca en admin.
+          </p>
+        </div>
+        <form id="checkoutForm" class="checkout-form">
+          <div class="checkout-grid">
+            <div class="field">
+              <label for="checkoutName">Nombre y apellido</label>
+              <input id="checkoutName" type="text" required />
+            </div>
+            <div class="field">
+              <label for="checkoutPhone">Telefono / WhatsApp</label>
+              <input id="checkoutPhone" type="tel" required />
+            </div>
+            <div class="field">
+              <label for="checkoutEmail">Email (opcional)</label>
+              <input id="checkoutEmail" type="email" />
+            </div>
+            <div class="field">
+              <label for="checkoutAddress">Ciudad o direccion</label>
+              <input id="checkoutAddress" type="text" />
+            </div>
+            <div class="field">
+              <label for="checkoutDeliveryMethod">Metodo de entrega</label>
+              <select id="checkoutDeliveryMethod" required>
+                <option value="delivery">Delivery</option>
+                <option value="pickup">Retiro en local</option>
+                <option value="meeting">Punto de encuentro</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="checkoutPaymentMethod">Metodo de pago</label>
+              <select id="checkoutPaymentMethod" required>
+                <option value="transferencia">Transferencia</option>
+                <option value="qr">QR</option>
+                <option value="tarjeta">Tarjeta</option>
+                <option value="efectivo">Efectivo</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="checkoutPreferredDate">Fecha preferida (opcional)</label>
+              <input id="checkoutPreferredDate" type="date" />
+            </div>
+            <div class="field">
+              <label for="checkoutPreferredTime">Horario preferido (opcional)</label>
+              <input id="checkoutPreferredTime" type="text" placeholder="Ej: 14:00 a 18:00" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="checkoutNotes">Notas del pedido (opcional)</label>
+            <textarea id="checkoutNotes" rows="3"></textarea>
+          </div>
+
+          <section class="checkout-summary">
+            <h3>Resumen</h3>
+            <div id="checkoutSummaryItems" class="checkout-summary-items"></div>
+            <p class="checkout-total">
+              Total: <strong id="checkoutSummaryTotal">Gs. 0</strong>
+            </p>
+            <p id="checkoutMinOrderHint" class="checkout-min-hint"></p>
+          </section>
+
+          <div class="checkout-actions">
+            <button id="checkoutAndWhatsAppBtn" class="btn btn-ghost" type="button">
+              Finalizar y enviar por WhatsApp
+            </button>
+            <button class="btn btn-primary" type="submit">Finalizar pedido</button>
+          </div>
+          <p id="checkoutMsg" class="newsletter-msg"></p>
+        </form>
+      </div>
+    </dialog>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
