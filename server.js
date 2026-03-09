@@ -12,6 +12,8 @@ const ROOT_DIR = __dirname;
 loadEnvFile(path.join(ROOT_DIR, ".env"));
 
 const PORT = Number(process.env.PORT) || 3000;
+const HOST = String(process.env.HOST || "0.0.0.0").trim() || "0.0.0.0";
+const DATA_DIR = String(process.env.DATA_DIR || "").trim();
 const MAX_JSON_BODY_BYTES = 1024 * 1024;
 const SESSION_COOKIE_NAME = "cv_admin_session";
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -26,6 +28,7 @@ const CLOUDINARY_FOLDER = String(
 ).trim();
 const storeRepository = new StoreRepository({
   rootDir: ROOT_DIR,
+  dataDir: DATA_DIR || undefined,
   defaultUsername: process.env.ADMIN_USERNAME,
   defaultPassword: process.env.ADMIN_PASSWORD,
 });
@@ -682,16 +685,16 @@ function createServer() {
   });
 }
 
-async function startServer(port = PORT) {
+async function startServer(port = PORT, host = HOST) {
   await storeRepository.init();
 
   const server = createServer();
   await new Promise((resolve) => {
-    server.listen(port, resolve);
+    server.listen(port, host, resolve);
   });
 
   const mode = process.env.NODE_ENV === "production" ? "production" : "development";
-  console.log(`[celi-vibes] server running on http://localhost:${port} (${mode})`);
+  console.log(`[celi-vibes] server running on http://${host}:${port} (${mode})`);
   return server;
 }
 

@@ -92,6 +92,48 @@ Sirve en hosting Node tradicional. No es para hosting estatico puro porque neces
 
 Si tu proveedor usa filesystem efimero, monta un volumen persistente para `data/store.json`.
 
+## Fly.io
+
+Quedo preparado para Fly.io con:
+
+- `Dockerfile`
+- `fly.toml`
+- volumen persistente en `/data`
+
+Pasos:
+
+1. Cambiar `app = "celi-vibes-change-me"` en `fly.toml` por un nombre unico.
+2. Crear el volumen una sola vez:
+
+```bash
+fly volumes create celi_vibes_data --region gru --size 3
+```
+
+3. Cargar secretos:
+
+```bash
+fly secrets set \
+  ADMIN_USERNAME=admin \
+  ADMIN_PASSWORD=tu-clave-segura \
+  CLOUDINARY_CLOUD_NAME=... \
+  CLOUDINARY_API_KEY=... \
+  CLOUDINARY_API_SECRET=... \
+  CLOUDINARY_FOLDER=celi-vibes/productos
+```
+
+4. Desplegar:
+
+```bash
+fly deploy
+```
+
+5. Verificar:
+
+```bash
+fly status
+fly logs
+```
+
 ## Checklist antes de publicar
 
 1. Definir `ADMIN_USERNAME` y una clave fuerte en `.env`.
