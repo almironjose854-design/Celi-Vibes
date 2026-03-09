@@ -71,6 +71,27 @@
           <button type="button" class="panel-nav-btn" data-target="securitySection">Seguridad</button>
         </nav>
 
+        <section class="admin-utility-bar" aria-label="Acciones rapidas de administracion">
+          <div class="utility-actions">
+            <button id="quickAddProductBtn" type="button" class="ghost">Nuevo producto</button>
+            <button id="quickLowStockBtn" type="button" class="ghost">Stock critico</button>
+            <button id="quickPendingOrdersBtn" type="button" class="ghost">Pedidos pendientes</button>
+            <button id="refreshAdminBtn" type="button" class="ghost">Actualizar datos</button>
+          </div>
+          <div class="utility-status">
+            <span id="syncStatusBadge" class="sync-badge">Sincronizado</span>
+            <p id="lastSyncLabel" class="note">Aun no se sincronizo con el servidor.</p>
+            <p class="note utility-shortcuts">
+              Atajos: Ctrl/Cmd+S guardar, / buscar, Alt+N producto, Alt+R actualizar.
+            </p>
+          </div>
+        </section>
+
+        <section id="adminUndoBar" class="undo-bar hidden" aria-live="polite">
+          <p id="undoMessage" class="msg"></p>
+          <button id="undoActionBtn" type="button" class="ghost">Deshacer</button>
+        </section>
+
         <section class="metrics-grid">
           <article>
             <p>Productos</p>
@@ -159,6 +180,7 @@
                 <button id="cancelEditBtn" class="ghost hidden" type="button">Cancelar</button>
               </div>
               <p id="productMsg" class="msg"></p>
+              <p id="productDraftNote" class="note hidden"></p>
             </form>
 
             <div class="tools-row">
@@ -180,11 +202,23 @@
                   <option value="out">Sin stock</option>
                 </select>
               </div>
+              <div class="field compact">
+                <label for="productSort">Orden</label>
+                <select id="productSort">
+                  <option value="name-asc">Nombre A-Z</option>
+                  <option value="name-desc">Nombre Z-A</option>
+                  <option value="price-desc">Precio mayor</option>
+                  <option value="price-asc">Precio menor</option>
+                  <option value="stock-asc">Stock menor</option>
+                  <option value="stock-desc">Stock mayor</option>
+                </select>
+              </div>
               <form id="bulkPriceForm" class="inline-form">
                 <label for="bulkPricePercent">Ajuste %</label>
                 <input id="bulkPricePercent" type="number" step="0.1" placeholder="-10 o 5" required />
                 <button class="ghost" type="submit">Aplicar</button>
               </form>
+              <button id="productResetFilters" class="ghost" type="button">Limpiar filtros</button>
             </div>
 
             <p id="productTableMeta" class="msg"></p>
@@ -247,6 +281,7 @@
               </div>
               <button class="primary" type="submit">Guardar contenido</button>
               <p id="contentMsg" class="msg"></p>
+              <p id="contentDraftNote" class="note hidden"></p>
             </form>
           </article>
 
@@ -257,6 +292,12 @@
             </div>
             <div class="orders-toolbar">
               <div id="ordersStatusSummary" class="orders-status-summary"></div>
+              <div id="ordersPresets" class="orders-presets">
+                <button type="button" class="ghost" data-preset="today">Hoy</button>
+                <button type="button" class="ghost" data-preset="last7">Ultimos 7 dias</button>
+                <button type="button" class="ghost" data-preset="pending">Solo pendientes</button>
+                <button type="button" class="ghost" data-preset="completed">Solo completados</button>
+              </div>
               <div class="orders-filters">
                 <div class="field grow">
                   <label for="ordersSearch">Buscar pedido</label>
@@ -285,6 +326,30 @@
                   <label for="ordersDateTo">Hasta</label>
                   <input id="ordersDateTo" type="date" />
                 </div>
+                <div class="field">
+                  <label for="ordersSort">Orden</label>
+                  <select id="ordersSort">
+                    <option value="recent-desc">Mas recientes</option>
+                    <option value="recent-asc">Mas antiguos</option>
+                    <option value="total-desc">Mayor importe</option>
+                    <option value="total-asc">Menor importe</option>
+                    <option value="status">Estado</option>
+                  </select>
+                </div>
+              </div>
+              <div class="orders-bulk">
+                <div class="field compact">
+                  <label for="bulkOrderStatus">Estado masivo</label>
+                  <select id="bulkOrderStatus">
+                    <option value="confirmado">Confirmado</option>
+                    <option value="enviado">Enviado</option>
+                    <option value="completado">Completado</option>
+                    <option value="cancelado">Cancelado</option>
+                  </select>
+                </div>
+                <button id="applyOrderStatusBtn" class="ghost" type="button">
+                  Aplicar a filtrados
+                </button>
               </div>
               <div class="actions">
                 <button id="ordersResetFilters" class="ghost" type="button">Limpiar filtros</button>

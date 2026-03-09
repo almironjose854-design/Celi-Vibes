@@ -1017,7 +1017,7 @@ body {
 .orders-filters {
   display: grid;
   gap: 0.6rem;
-  grid-template-columns: minmax(220px, 1.5fr) repeat(3, minmax(140px, 1fr));
+  grid-template-columns: minmax(220px, 1.35fr) repeat(4, minmax(130px, 1fr));
 }
 
 .orders-filters .field {
@@ -1409,8 +1409,92 @@ body {
   scroll-margin-top: 5.9rem;
 }
 
+.admin-utility-bar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.8rem;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(186, 142, 122, 0.26);
+  background: rgba(255, 251, 249, 0.9);
+  box-shadow: 0 12px 22px rgba(80, 47, 39, 0.08);
+}
+
+.utility-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.utility-status {
+  display: grid;
+  justify-items: end;
+  gap: 0.2rem;
+}
+
+.utility-shortcuts {
+  max-width: 38ch;
+  text-align: right;
+}
+
+.sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(186, 142, 122, 0.28);
+  background: linear-gradient(160deg, #ffffff, #fff6f1);
+  color: #5f3a38;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.sync-badge::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #8f7a72;
+  box-shadow: 0 0 0 4px rgba(143, 122, 114, 0.12);
+}
+
+.sync-badge.is-saving::before {
+  background: #d89b4f;
+  box-shadow: 0 0 0 4px rgba(216, 155, 79, 0.14);
+}
+
+.sync-badge.is-ok::before {
+  background: #4ca474;
+  box-shadow: 0 0 0 4px rgba(76, 164, 116, 0.14);
+}
+
+.sync-badge.is-error::before {
+  background: #c85d5f;
+  box-shadow: 0 0 0 4px rgba(200, 93, 95, 0.14);
+}
+
 .field.compact {
   min-width: 180px;
+}
+
+.undo-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.8rem 0.95rem;
+  border-radius: 18px;
+  border: 1px solid rgba(186, 142, 122, 0.26);
+  background: linear-gradient(160deg, rgba(255, 250, 247, 0.96), rgba(255, 242, 235, 0.96));
+  box-shadow: 0 12px 22px rgba(80, 47, 39, 0.08);
+}
+
+.undo-bar .msg {
+  margin: 0;
+  flex: 1;
 }
 
 .product-row.is-low-stock {
@@ -1427,6 +1511,23 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
+}
+
+.orders-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.orders-bulk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: end;
+}
+
+.orders-bulk .field {
+  min-width: 190px;
 }
 
 .status-pill {
@@ -1457,6 +1558,18 @@ body {
     top: 0.4rem;
   }
 
+  .admin-utility-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .utility-status {
+    justify-items: start;
+  }
+
+  .utility-shortcuts {
+    text-align: left;
+  }
+
   .field.compact {
     min-width: 0;
   }
@@ -1470,5 +1583,25 @@ body {
   .panel-nav-btn {
     flex: 1 1 calc(50% - 0.45rem);
     text-align: center;
+  }
+
+  .orders-presets,
+  .utility-actions,
+  .orders-bulk {
+    flex-direction: column;
+  }
+
+  .undo-bar {
+    align-items: stretch;
+  }
+
+  .undo-bar button {
+    width: 100%;
+  }
+
+  .orders-bulk .field,
+  .orders-bulk button,
+  .utility-actions button {
+    width: 100%;
   }
 }

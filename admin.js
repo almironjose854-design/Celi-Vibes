@@ -1,5 +1,6 @@
 const STORAGE_KEYS = {
   cart: "celi-vibes-cart",
+  adminUi: "celi-vibes-admin-ui",
 };
 
 const CLOUDINARY_SIGNATURE_ENDPOINT = "/api/uploads/product-image/signature";
@@ -21,6 +22,17 @@ const ORDER_STATUS_META = {
   completado: { label: "Completado", color: "#4ca474" },
   cancelado: { label: "Cancelado", color: "#cf6660" },
 };
+const PRODUCT_SORT_VALUES = [
+  "name-asc",
+  "name-desc",
+  "price-desc",
+  "price-asc",
+  "stock-asc",
+  "stock-desc",
+];
+const PRODUCT_SORT_SET = new Set(PRODUCT_SORT_VALUES);
+const ORDER_SORT_VALUES = ["recent-desc", "recent-asc", "total-desc", "total-asc", "status"];
+const ORDER_SORT_SET = new Set(ORDER_SORT_VALUES);
 
 const defaultProducts = [
   {
@@ -156,18 +168,28 @@ const state = {
   orders: [],
   credentials: { ...defaultAdminCredentials },
   sessionActive: false,
+  lastSyncedAt: "",
+  syncTone: "ok",
+  syncText: "Sincronizado",
+  contentFormDirty: false,
+  productFormDirty: false,
   editingProductId: "",
   productSearch: "",
   productCategoryFilter: "all",
   productStockFilter: "all",
+  productSort: "name-asc",
   orderSearch: "",
   orderStatusFilter: "all",
   orderDateFrom: "",
   orderDateTo: "",
+  orderSort: "recent-desc",
   reportRange: "30",
   reportRevenueMode: "completed",
   isUploadingImage: false,
   productPreviewObjectUrl: "",
+  activeSectionId: "productsSection",
+  undoState: null,
+  undoTimerId: 0,
 };
 
 const loginView = document.querySelector("#loginView");
@@ -180,6 +202,15 @@ const logoutBtn = document.querySelector("#logoutBtn");
 const sessionLabel = document.querySelector("#sessionLabel");
 const panelNav = document.querySelector("#panelNav");
 const panelSections = [...document.querySelectorAll(".panel-section")];
+const quickAddProductBtn = document.querySelector("#quickAddProductBtn");
+const quickLowStockBtn = document.querySelector("#quickLowStockBtn");
+const quickPendingOrdersBtn = document.querySelector("#quickPendingOrdersBtn");
+const refreshAdminBtn = document.querySelector("#refreshAdminBtn");
+const syncStatusBadge = document.querySelector("#syncStatusBadge");
+const lastSyncLabel = document.querySelector("#lastSyncLabel");
+const undoBar = document.querySelector("#adminUndoBar");
+const undoMessage = document.querySelector("#undoMessage");
+const undoActionBtn = document.querySelector("#undoActionBtn");
 
 const metricProducts = document.querySelector("#metricProducts");
 const metricCategories = document.querySelector("#metricCategories");
@@ -208,10 +239,13 @@ const productMsg = document.querySelector("#productMsg");
 const productSearch = document.querySelector("#productSearch");
 const productCategoryFilter = document.querySelector("#productCategoryFilter");
 const productStockFilter = document.querySelector("#productStockFilter");
+const productSort = document.querySelector("#productSort");
 const productTableMeta = document.querySelector("#productTableMeta");
 const productTable = document.querySelector("#productTable");
 const bulkPriceForm = document.querySelector("#bulkPriceForm");
 const bulkPricePercent = document.querySelector("#bulkPricePercent");
+const productResetFilters = document.querySelector("#productResetFilters");
+const productDraftNote = document.querySelector("#productDraftNote");
 
 const contentForm = document.querySelector("#contentForm");
 const contentShippingMsg = document.querySelector("#contentShippingMsg");
@@ -227,17 +261,22 @@ const contentPromoButton = document.querySelector("#contentPromoButton");
 const contentNewsletterTitle = document.querySelector("#contentNewsletterTitle");
 const contentNewsletterDescription = document.querySelector("#contentNewsletterDescription");
 const contentMsg = document.querySelector("#contentMsg");
+const contentDraftNote = document.querySelector("#contentDraftNote");
 
 const ordersList = document.querySelector("#ordersList");
 const ordersSearch = document.querySelector("#ordersSearch");
 const ordersStatusFilter = document.querySelector("#ordersStatusFilter");
 const ordersDateFrom = document.querySelector("#ordersDateFrom");
 const ordersDateTo = document.querySelector("#ordersDateTo");
+const ordersSort = document.querySelector("#ordersSort");
 const ordersResetFilters = document.querySelector("#ordersResetFilters");
 const ordersExportCsv = document.querySelector("#ordersExportCsv");
 const ordersMsg = document.querySelector("#ordersMsg");
 const ordersStatusSummary = document.querySelector("#ordersStatusSummary");
+const ordersPresets = document.querySelector("#ordersPresets");
 const clearCompletedOrders = document.querySelector("#clearCompletedOrders");
+const bulkOrderStatus = document.querySelector("#bulkOrderStatus");
+const applyOrderStatusBtn = document.querySelector("#applyOrderStatusBtn");
 const reportRange = document.querySelector("#reportRange");
 const reportRevenueMode = document.querySelector("#reportRevenueMode");
 const exportReportsBtn = document.querySelector("#exportReportsBtn");
@@ -269,6 +308,117 @@ function parseJson(value) {
     return JSON.parse(value);
   } catch {
     return null;
+  }
+}
+
+function safeStorageGetItem(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeStorageSetItem(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {}
+}
+
+function deepClonePlain(value) {
+  try {
+    if (typeof structuredClone === "function") {
+      return structuredClone(value);
+    }
+    return JSON.parse(JSON.stringify(value));
+  } catch {
+    return null;
+  }
+}
+
+function getDefaultPanelSectionId() {
+  return panelSections[0]?.id || "productsSection";
+}
+
+function persistAdminUiState() {
+  safeStorageSetItem(
+    STORAGE_KEYS.adminUi,
+    JSON.stringify({
+      productSearch: state.productSearch,
+      productCategoryFilter: state.productCategoryFilter,
+      productStockFilter: state.productStockFilter,
+      productSort: state.productSort,
+      orderSearch: state.orderSearch,
+      orderStatusFilter: state.orderStatusFilter,
+      orderDateFrom: state.orderDateFrom,
+      orderDateTo: state.orderDateTo,
+      orderSort: state.orderSort,
+      reportRange: state.reportRange,
+      reportRevenueMode: state.reportRevenueMode,
+      activeSectionId: state.activeSectionId,
+    })
+  );
+}
+
+function loadAdminUiState() {
+  const raw = safeStorageGetItem(STORAGE_KEYS.adminUi);
+  const parsed = raw ? parseJson(raw) : null;
+  if (!parsed || typeof parsed !== "object") {
+    state.activeSectionId = getDefaultPanelSectionId();
+    return;
+  }
+
+  if (typeof parsed.productSearch === "string") {
+    state.productSearch = parsed.productSearch;
+  }
+
+  if (typeof parsed.productCategoryFilter === "string") {
+    state.productCategoryFilter = parsed.productCategoryFilter;
+  }
+
+  if (typeof parsed.productStockFilter === "string") {
+    state.productStockFilter = parsed.productStockFilter;
+  }
+
+  if (typeof parsed.productSort === "string" && PRODUCT_SORT_SET.has(parsed.productSort)) {
+    state.productSort = parsed.productSort;
+  }
+
+  if (typeof parsed.orderSearch === "string") {
+    state.orderSearch = parsed.orderSearch;
+  }
+
+  if (typeof parsed.orderStatusFilter === "string") {
+    state.orderStatusFilter = parsed.orderStatusFilter;
+  }
+
+  if (typeof parsed.orderDateFrom === "string") {
+    state.orderDateFrom = parsed.orderDateFrom;
+  }
+
+  if (typeof parsed.orderDateTo === "string") {
+    state.orderDateTo = parsed.orderDateTo;
+  }
+
+  if (typeof parsed.orderSort === "string" && ORDER_SORT_SET.has(parsed.orderSort)) {
+    state.orderSort = parsed.orderSort;
+  }
+
+  if (typeof parsed.reportRange === "string") {
+    state.reportRange = parsed.reportRange;
+  }
+
+  if (typeof parsed.reportRevenueMode === "string") {
+    state.reportRevenueMode = parsed.reportRevenueMode;
+  }
+
+  if (
+    typeof parsed.activeSectionId === "string" &&
+    panelSections.some((section) => section.id === parsed.activeSectionId)
+  ) {
+    state.activeSectionId = parsed.activeSectionId;
+  } else {
+    state.activeSectionId = getDefaultPanelSectionId();
   }
 }
 
@@ -334,6 +484,138 @@ function setMessage(node, text, isError = false) {
   if (!node) return;
   node.textContent = text;
   node.style.color = isError ? "var(--danger)" : "var(--muted)";
+}
+
+function setNote(node, text) {
+  if (!node) return;
+  const normalized = String(text || "").trim();
+  node.textContent = normalized;
+  node.classList.toggle("hidden", !normalized);
+}
+
+function formatRelativeTime(value) {
+  if (!value) {
+    return "Aun no se sincronizo con el servidor.";
+  }
+
+  const date = new Date(value);
+  const timestamp = date.getTime();
+  if (!Number.isFinite(timestamp)) {
+    return "No se pudo calcular la ultima sincronizacion.";
+  }
+
+  const diffMs = Date.now() - timestamp;
+  const diffSeconds = Math.max(0, Math.round(diffMs / 1000));
+
+  if (diffSeconds < 10) return "Sincronizado hace unos segundos.";
+  if (diffSeconds < 60) return `Sincronizado hace ${diffSeconds}s.`;
+
+  const diffMinutes = Math.round(diffSeconds / 60);
+  if (diffMinutes < 60) return `Sincronizado hace ${diffMinutes} min.`;
+
+  const diffHours = Math.round(diffMinutes / 60);
+  if (diffHours < 24) return `Sincronizado hace ${diffHours} h.`;
+
+  return `Sincronizado el ${formatDateTime(value)}.`;
+}
+
+function renderSyncStatus() {
+  if (syncStatusBadge) {
+    syncStatusBadge.textContent = state.syncText;
+    syncStatusBadge.classList.remove("is-saving", "is-ok", "is-error");
+    syncStatusBadge.classList.add(
+      state.syncTone === "saving"
+        ? "is-saving"
+        : state.syncTone === "error"
+          ? "is-error"
+          : "is-ok"
+    );
+  }
+
+  if (lastSyncLabel) {
+    lastSyncLabel.textContent = formatRelativeTime(state.lastSyncedAt);
+  }
+}
+
+function setSyncStatus(text, tone = "ok", touchTimestamp = false) {
+  state.syncText = text;
+  state.syncTone = tone;
+  if (touchTimestamp) {
+    state.lastSyncedAt = new Date().toISOString();
+  }
+  renderSyncStatus();
+}
+
+function setProductDirty(isDirty, text = "") {
+  state.productFormDirty = Boolean(isDirty);
+  setNote(
+    productDraftNote,
+    state.productFormDirty ? text || "Tienes cambios sin guardar en el formulario de producto." : ""
+  );
+}
+
+function setContentDirty(isDirty, text = "") {
+  state.contentFormDirty = Boolean(isDirty);
+  setNote(
+    contentDraftNote,
+    state.contentFormDirty ? text || "Tienes cambios sin guardar en el contenido publico." : ""
+  );
+}
+
+function getScopeMessageNode(scope) {
+  if (scope === "orders") return ordersMsg;
+  if (scope === "data") return dataMsg;
+  if (scope === "security") return securityMsg;
+  return productMsg;
+}
+
+function renderUndoBar() {
+  if (!undoBar || !undoMessage || !undoActionBtn) return;
+
+  if (!state.undoState) {
+    undoBar.classList.add("hidden");
+    undoMessage.textContent = "";
+    undoActionBtn.disabled = true;
+    return;
+  }
+
+  undoMessage.textContent = state.undoState.message || "Cambio listo para deshacer.";
+  undoActionBtn.disabled = false;
+  undoBar.classList.remove("hidden");
+}
+
+function clearUndoState({ render = true } = {}) {
+  if (state.undoTimerId) {
+    window.clearTimeout(state.undoTimerId);
+  }
+
+  state.undoTimerId = 0;
+  state.undoState = null;
+
+  if (render) {
+    renderUndoBar();
+  }
+}
+
+function rememberUndoAction(entry) {
+  clearUndoState({ render: false });
+  state.undoState = entry;
+  renderUndoBar();
+  state.undoTimerId = window.setTimeout(() => {
+    clearUndoState();
+  }, 12000);
+}
+
+function setActivePanelSection(sectionId) {
+  const fallbackId = getDefaultPanelSectionId();
+  const nextId = panelSections.some((section) => section.id === sectionId) ? sectionId : fallbackId;
+
+  if (state.activeSectionId === nextId) {
+    return;
+  }
+
+  state.activeSectionId = nextId;
+  persistAdminUiState();
 }
 
 function formatDateTime(value) {
@@ -564,10 +846,13 @@ function applyAdminSnapshot(snapshot) {
 }
 
 async function fetchAdminSnapshot() {
-  return apiFetchJson(ADMIN_BOOTSTRAP_ENDPOINT);
+  const snapshot = await apiFetchJson(ADMIN_BOOTSTRAP_ENDPOINT);
+  setSyncStatus("Sincronizado", "ok", true);
+  return snapshot;
 }
 
 async function persistAdminStoreSnapshot() {
+  setSyncStatus("Guardando cambios...", "saving");
   const saved = await apiFetchJson(ADMIN_STORE_ENDPOINT, {
     method: "PUT",
     body: JSON.stringify({
@@ -581,11 +866,32 @@ async function persistAdminStoreSnapshot() {
     ...saved,
     username: state.credentials.username,
   });
+  setSyncStatus("Cambios guardados", "ok", true);
 }
 
 async function syncAdminStateFromServer() {
   const snapshot = await fetchAdminSnapshot();
   applyAdminSnapshot(snapshot);
+}
+
+async function refreshAdminData({ showFeedback = false } = {}) {
+  try {
+    setSyncStatus("Actualizando datos...", "saving");
+    await syncAdminStateFromServer();
+    refreshAll();
+    if (showFeedback) {
+      setMessage(ordersMsg, "Datos actualizados desde el servidor.");
+    }
+    return true;
+  } catch (error) {
+    const text =
+      error instanceof Error ? error.message : "No se pudieron actualizar los datos.";
+    setSyncStatus("Error de sincronizacion", "error");
+    if (showFeedback) {
+      setMessage(ordersMsg, text, true);
+    }
+    return false;
+  }
 }
 
 async function handleStorePersistence(messageNode, successMessage) {
@@ -605,6 +911,7 @@ async function handleStorePersistence(messageNode, successMessage) {
 
     const text =
       error instanceof Error ? error.message : "No se pudo guardar el cambio en el servidor.";
+    setSyncStatus("Error de sincronizacion", "error");
     if (messageNode) {
       setMessage(messageNode, text, true);
     }
@@ -708,6 +1015,7 @@ function resetProductForm() {
   setMessage(uploadImageMsg, "");
   updateSaveButtonLabel();
   cancelEditBtn.classList.add("hidden");
+  setProductDirty(false);
 }
 
 function readProductForm({ allowEmptyImage = false } = {}) {
@@ -774,6 +1082,7 @@ function fillProductForm(product) {
   updateProductImagePreview();
   updateSaveButtonLabel();
   cancelEditBtn.classList.remove("hidden");
+  setProductDirty(false);
 }
 
 function setUploadBusyState(isBusy) {
@@ -934,6 +1243,37 @@ function syncProductFilterInputs() {
     }
     productStockFilter.value = state.productStockFilter;
   }
+
+  if (productSort) {
+    if (!PRODUCT_SORT_SET.has(state.productSort)) {
+      state.productSort = "name-asc";
+    }
+    productSort.value = state.productSort;
+  }
+}
+
+function getProductSortComparator() {
+  if (state.productSort === "name-desc") {
+    return (a, b) => b.name.localeCompare(a.name, "es");
+  }
+
+  if (state.productSort === "price-desc") {
+    return (a, b) => b.price - a.price || a.name.localeCompare(b.name, "es");
+  }
+
+  if (state.productSort === "price-asc") {
+    return (a, b) => a.price - b.price || a.name.localeCompare(b.name, "es");
+  }
+
+  if (state.productSort === "stock-asc") {
+    return (a, b) => a.stock - b.stock || a.name.localeCompare(b.name, "es");
+  }
+
+  if (state.productSort === "stock-desc") {
+    return (a, b) => b.stock - a.stock || a.name.localeCompare(b.name, "es");
+  }
+
+  return (a, b) => a.name.localeCompare(b.name, "es");
 }
 
 function getFilteredProductsForTable() {
@@ -964,7 +1304,7 @@ function getFilteredProductsForTable() {
 
       return true;
     })
-    .sort((a, b) => a.name.localeCompare(b.name, "es"));
+    .sort(getProductSortComparator());
 }
 
 function renderProductTable() {
@@ -979,6 +1319,9 @@ function renderProductTable() {
     productTableMeta.textContent = hasFiltersApplied
       ? `Mostrando ${rows.length} de ${state.products.length} productos.`
       : `Total de productos: ${state.products.length}.`;
+    if (productResetFilters) {
+      productResetFilters.disabled = !hasFiltersApplied;
+    }
   }
 
   if (rows.length === 0) {
@@ -1030,6 +1373,26 @@ function buildAdminContactMessage(order) {
   }
 
   return message.join("\n");
+}
+
+function buildOrderClipboardSummary(order) {
+  const lines = order.items.map((item) => `${item.qty}x ${item.name} - ${gs(item.subtotal)}`);
+  return [
+    `Pedido ${order.id}`,
+    `Estado: ${formatOrderStatus(order.status)}`,
+    `Fecha: ${formatDateTime(order.createdAt)}`,
+    `Cliente: ${order.customer.name}`,
+    `Telefono: ${order.customer.phone || "Sin datos"}`,
+    order.customer.email ? `Email: ${order.customer.email}` : "",
+    order.customer.address ? `Direccion: ${order.customer.address}` : "",
+    "",
+    "Items:",
+    ...lines,
+    "",
+    `Total: ${gs(Number(order.total || 0))}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function contactCustomer(order) {
@@ -1116,7 +1479,7 @@ function getFilteredOrders() {
 
       return true;
     })
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .sort(getOrderSortComparator());
 
   return { rows, error: "" };
 }
@@ -1135,6 +1498,12 @@ function syncOrdersFilterInputs() {
   }
   if (ordersDateFrom) ordersDateFrom.value = state.orderDateFrom;
   if (ordersDateTo) ordersDateTo.value = state.orderDateTo;
+  if (ordersSort) {
+    if (!ORDER_SORT_SET.has(state.orderSort)) {
+      state.orderSort = "recent-desc";
+    }
+    ordersSort.value = state.orderSort;
+  }
 }
 
 function resetOrdersFilters() {
@@ -1143,6 +1512,56 @@ function resetOrdersFilters() {
   state.orderDateFrom = "";
   state.orderDateTo = "";
   syncOrdersFilterInputs();
+}
+
+function getOrderSortComparator() {
+  if (state.orderSort === "recent-asc") {
+    return (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  }
+
+  if (state.orderSort === "total-desc") {
+    return (a, b) => Number(b.total || 0) - Number(a.total || 0);
+  }
+
+  if (state.orderSort === "total-asc") {
+    return (a, b) => Number(a.total || 0) - Number(b.total || 0);
+  }
+
+  if (state.orderSort === "status") {
+    return (a, b) => {
+      const diff =
+        ORDER_STATUS_VALUES.indexOf(a.status) - ORDER_STATUS_VALUES.indexOf(b.status);
+      if (diff !== 0) return diff;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    };
+  }
+
+  return (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+}
+
+function applyOrdersPreset(preset) {
+  const todayKey = new Date().toISOString().slice(0, 10);
+
+  if (preset === "today") {
+    state.orderDateFrom = todayKey;
+    state.orderDateTo = todayKey;
+    return;
+  }
+
+  if (preset === "last7") {
+    state.orderDateFrom = addDays(new Date(), -6).toISOString().slice(0, 10);
+    state.orderDateTo = todayKey;
+    return;
+  }
+
+  if (preset === "pending") {
+    state.orderStatusFilter = "pendiente";
+    return;
+  }
+
+  if (preset === "completed") {
+    state.orderStatusFilter = "completado";
+  }
 }
 
 function startOfDay(date) {
@@ -1597,6 +2016,12 @@ function renderOrdersStatusSummary() {
 function renderOrders() {
   renderOrdersStatusSummary();
   const { rows, error } = getFilteredOrders();
+  if (applyOrderStatusBtn) {
+    applyOrderStatusBtn.disabled = Boolean(error) || rows.length === 0;
+  }
+  if (bulkOrderStatus) {
+    bulkOrderStatus.disabled = Boolean(error) || rows.length === 0;
+  }
 
   if (error) {
     setMessage(ordersMsg, error, true);
@@ -1707,6 +2132,7 @@ function renderOrders() {
             ? `<button type="button" class="ghost" data-action="contact-order" data-id="${order.id}">Contactar cliente</button>`
             : ""
         }
+        <button type="button" class="ghost" data-action="copy-order" data-id="${order.id}">Copiar resumen</button>
         <button type="button" data-action="delete-order" data-id="${order.id}">Eliminar</button>
       </div>
     `;
@@ -1728,6 +2154,7 @@ function fillContentForm() {
   contentPromoButton.value = state.content.promoButtonText;
   contentNewsletterTitle.value = state.content.newsletterTitle;
   contentNewsletterDescription.value = state.content.newsletterDescription;
+  setContentDirty(false);
 }
 
 function fillSecurityForm() {
@@ -1753,14 +2180,17 @@ function updatePanelNavActive() {
     if (!(button instanceof HTMLButtonElement)) return;
     button.classList.toggle("active", button.dataset.target === activeId);
   });
+
+  setActivePanelSection(activeId);
 }
 
-function scrollToPanelSection(sectionId) {
+function scrollToPanelSection(sectionId, options = {}) {
   if (!sectionId) return;
   const section = document.getElementById(sectionId);
   if (!section) return;
 
-  section.scrollIntoView({ behavior: "smooth", block: "start" });
+  setActivePanelSection(section.id);
+  section.scrollIntoView({ behavior: options.behavior || "smooth", block: "start" });
 }
 
 function setupPanelNav() {
@@ -1790,10 +2220,27 @@ function refreshAll() {
   syncReportInputs();
   renderOrders();
   renderReports();
-  fillContentForm();
+  if (!state.contentFormDirty) {
+    fillContentForm();
+  } else {
+    setContentDirty(true, "Tienes cambios sin guardar en contenido. No se sobrescribieron al sincronizar.");
+  }
   fillSecurityForm();
   sessionLabel.textContent = `Sesion activa: ${state.credentials.username}`;
+  renderSyncStatus();
+  renderUndoBar();
   updatePanelNavActive();
+}
+
+function restorePanelLocation() {
+  const targetId = state.activeSectionId;
+  if (!targetId || targetId === getDefaultPanelSectionId()) {
+    return;
+  }
+
+  window.requestAnimationFrame(() => {
+    scrollToPanelSection(targetId, { behavior: "auto" });
+  });
 }
 
 function showPanel() {
@@ -1801,12 +2248,14 @@ function showPanel() {
   panelView.classList.remove("hidden");
   logoutBtn.classList.remove("hidden");
   refreshAll();
+  restorePanelLocation();
 }
 
 function showLogin() {
   panelView.classList.add("hidden");
   loginView.classList.remove("hidden");
   logoutBtn.classList.add("hidden");
+  clearUndoState();
 }
 
 function requireSession() {
@@ -1859,12 +2308,25 @@ async function handleProductAction(action, id) {
     const confirmed = confirm(`Eliminar \"${product.name}\"?`);
     if (!confirmed) return;
 
+    const removedProduct = deepClonePlain(product);
     state.products = state.products.filter((entry) => entry.id !== id);
     if (state.editingProductId === id) {
       resetProductForm();
     }
 
-    await handleStorePersistence(productMsg, "Producto eliminado.");
+    const persisted = await handleStorePersistence(productMsg, "Producto eliminado.");
+    if (persisted && removedProduct) {
+      rememberUndoAction({
+        type: "restore-product",
+        scope: "product",
+        message: `Producto "${product.name}" eliminado. Puedes deshacerlo durante unos segundos.`,
+        successMessage: "Producto restaurado.",
+        payload: {
+          product: removedProduct,
+          index,
+        },
+      });
+    }
   }
 }
 
@@ -2003,6 +2465,10 @@ async function importData(file) {
       username: state.credentials.username,
     });
     cleanCartAgainstProducts();
+    setContentDirty(false);
+    setProductDirty(false);
+    clearUndoState();
+    setSyncStatus("Datos importados", "ok", true);
     resetProductForm();
     refreshAll();
     setMessage(dataMsg, "Datos importados correctamente.");
@@ -2037,18 +2503,193 @@ async function resetStore() {
     state.orderStatusFilter = "all";
     state.orderDateFrom = "";
     state.orderDateTo = "";
+    state.orderSort = "recent-desc";
     state.reportRange = "30";
     state.reportRevenueMode = "completed";
 
     cleanCartAgainstProducts();
+    setContentDirty(false);
+    clearUndoState();
+    setSyncStatus("Tienda restablecida", "ok", true);
     productSearch.value = "";
     resetOrdersFilters();
+    persistAdminUiState();
     resetProductForm();
     refreshAll();
     setMessage(dataMsg, "Tienda restablecida a valores iniciales.");
   } catch (error) {
     const text = error instanceof Error ? error.message : "No se pudo restablecer la tienda.";
     setMessage(dataMsg, text, true);
+  }
+}
+
+function insertRestoredItem(rows, item, index) {
+  const list = [...rows];
+  const existingIndex = list.findIndex((entry) => entry.id === item.id);
+
+  if (existingIndex !== -1) {
+    list.splice(existingIndex, 1);
+  }
+
+  const safeIndex = Math.max(0, Math.min(Number(index) || 0, list.length));
+  list.splice(safeIndex, 0, item);
+  return list;
+}
+
+async function undoLastAction() {
+  if (!requireSession()) return;
+
+  const undoEntry = state.undoState;
+  if (!undoEntry) return;
+
+  if (state.undoTimerId) {
+    window.clearTimeout(state.undoTimerId);
+    state.undoTimerId = 0;
+  }
+
+  const messageNode = getScopeMessageNode(undoEntry.scope);
+
+  if (undoEntry.type === "restore-product") {
+    const restored = normalizeProduct(undoEntry.payload?.product);
+    if (!restored) {
+      clearUndoState();
+      setMessage(messageNode, "No se pudo restaurar el producto eliminado.", true);
+      return;
+    }
+
+    state.products = insertRestoredItem(state.products, restored, undoEntry.payload?.index);
+  } else if (undoEntry.type === "restore-order") {
+    const restored = normalizeOrder(undoEntry.payload?.order);
+    if (!restored) {
+      clearUndoState();
+      setMessage(messageNode, "No se pudo restaurar el pedido eliminado.", true);
+      return;
+    }
+
+    state.orders = insertRestoredItem(state.orders, restored, undoEntry.payload?.index);
+  } else if (undoEntry.type === "restore-orders-snapshot") {
+    const restoredOrders = Array.isArray(undoEntry.payload?.orders)
+      ? undoEntry.payload.orders.map(normalizeOrder).filter(Boolean)
+      : [];
+    state.orders = restoredOrders;
+  } else {
+    clearUndoState();
+    return;
+  }
+
+  const restored = await handleStorePersistence(
+    messageNode,
+    undoEntry.successMessage || "Cambio deshecho."
+  );
+
+  if (restored) {
+    clearUndoState();
+    return;
+  }
+
+  rememberUndoAction(undoEntry);
+}
+
+function isEditableTarget(target) {
+  if (!(target instanceof HTMLElement)) return false;
+
+  const tag = target.tagName;
+  return (
+    target.isContentEditable ||
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    tag === "SELECT"
+  );
+}
+
+function getShortcutFormTarget(target) {
+  if (!(target instanceof Element)) {
+    return null;
+  }
+
+  if (target.closest("#productForm")) return productForm;
+  if (target.closest("#contentForm")) return contentForm;
+  if (target.closest("#securityForm")) return securityForm;
+  return null;
+}
+
+function focusPreferredSearch() {
+  if (state.activeSectionId === "ordersSection" && ordersSearch) {
+    scrollToPanelSection("ordersSection");
+    ordersSearch.focus();
+    ordersSearch.select?.();
+    return;
+  }
+
+  scrollToPanelSection("productsSection");
+  productSearch.focus();
+  productSearch.select?.();
+}
+
+function submitShortcutForm(target) {
+  const directForm = getShortcutFormTarget(target);
+  if (directForm) {
+    directForm.requestSubmit();
+    return true;
+  }
+
+  if (state.activeSectionId === "productsSection" && (state.productFormDirty || state.editingProductId)) {
+    productForm.requestSubmit();
+    return true;
+  }
+
+  if (state.activeSectionId === "contentSection" && state.contentFormDirty) {
+    contentForm.requestSubmit();
+    return true;
+  }
+
+  return false;
+}
+
+function handleGlobalShortcuts(event) {
+  if (!isSessionActive()) return;
+
+  const key = String(event.key || "").toLowerCase();
+
+  if ((event.ctrlKey || event.metaKey) && key === "s") {
+    event.preventDefault();
+    submitShortcutForm(event.target);
+    return;
+  }
+
+  if (!event.ctrlKey && !event.metaKey && !event.altKey && event.key === "/") {
+    if (isEditableTarget(event.target)) return;
+    event.preventDefault();
+    focusPreferredSearch();
+    return;
+  }
+
+  if (!event.altKey || event.ctrlKey || event.metaKey) {
+    return;
+  }
+
+  if (key === "r") {
+    event.preventDefault();
+    void refreshAdminData({ showFeedback: true });
+    return;
+  }
+
+  if (key === "n") {
+    event.preventDefault();
+    resetProductForm();
+    scrollToPanelSection("productsSection");
+    productName.focus();
+    return;
+  }
+
+  if (key === "p") {
+    event.preventDefault();
+    resetOrdersFilters();
+    state.orderStatusFilter = "pendiente";
+    syncOrdersFilterInputs();
+    persistAdminUiState();
+    renderOrders();
+    scrollToPanelSection("ordersSection");
   }
 }
 
@@ -2069,6 +2710,7 @@ function attachEvents() {
       setSession(true);
       loginForm.reset();
       setMessage(loginMsg, "");
+      setSyncStatus("Sesion iniciada", "ok", true);
       showPanel();
     } catch (error) {
       const text = error instanceof Error ? error.message : "No se pudo iniciar sesion.";
@@ -2127,7 +2769,10 @@ function attachEvents() {
     }
 
     resetProductForm();
-    await handleStorePersistence(productMsg, successMessage);
+    const persisted = await handleStorePersistence(productMsg, successMessage);
+    if (persisted) {
+      setProductDirty(false);
+    }
   });
 
   cancelEditBtn.addEventListener("click", () => {
@@ -2136,18 +2781,41 @@ function attachEvents() {
     setMessage(productMsg, "Edicion cancelada.");
   });
 
-  productImage.addEventListener("input", updateProductImagePreview);
-  productImageFile.addEventListener("change", updateProductImagePreview);
+  [
+    productName,
+    productCategory,
+    productPrice,
+    productRating,
+    productBadge,
+    productStock,
+    productImage,
+    productDescription,
+  ].forEach((input) => {
+    input?.addEventListener("input", () => {
+      setProductDirty(true);
+    });
+  });
+
+  productImage.addEventListener("input", () => {
+    updateProductImagePreview();
+    setProductDirty(true);
+  });
+  productImageFile.addEventListener("change", () => {
+    updateProductImagePreview();
+    setProductDirty(true, "Hay una nueva imagen seleccionada sin guardar.");
+  });
   window.addEventListener("beforeunload", clearProductPreviewObjectUrl);
 
   productSearch.addEventListener("input", (event) => {
     state.productSearch = event.target.value;
+    persistAdminUiState();
     renderProductTable();
   });
 
   if (productCategoryFilter) {
     productCategoryFilter.addEventListener("change", (event) => {
       state.productCategoryFilter = event.target.value;
+      persistAdminUiState();
       renderProductTable();
     });
   }
@@ -2155,9 +2823,28 @@ function attachEvents() {
   if (productStockFilter) {
     productStockFilter.addEventListener("change", (event) => {
       state.productStockFilter = event.target.value;
+      persistAdminUiState();
       renderProductTable();
     });
   }
+
+  if (productSort) {
+    productSort.addEventListener("change", (event) => {
+      state.productSort = PRODUCT_SORT_SET.has(event.target.value) ? event.target.value : "name-asc";
+      persistAdminUiState();
+      renderProductTable();
+    });
+  }
+
+  productResetFilters?.addEventListener("click", () => {
+    state.productSearch = "";
+    state.productCategoryFilter = "all";
+    state.productStockFilter = "all";
+    state.productSort = "name-asc";
+    syncProductFilterInputs();
+    persistAdminUiState();
+    renderProductTable();
+  });
 
   productTable.addEventListener("click", async (event) => {
     const target = event.target;
@@ -2194,6 +2881,7 @@ function attachEvents() {
     const persisted = await handleStorePersistence(productMsg, "Precios actualizados en bloque.");
     if (persisted) {
       bulkPriceForm.reset();
+      setProductDirty(false);
     }
   });
 
@@ -2217,12 +2905,35 @@ function attachEvents() {
     });
 
     state.content = nextContent;
-    await handleStorePersistence(contentMsg, "Contenido actualizado.");
+    const persisted = await handleStorePersistence(contentMsg, "Contenido actualizado.");
+    if (persisted) {
+      setContentDirty(false);
+    }
+  });
+
+  [
+    contentShippingMsg,
+    contentSupportMsg,
+    contentHeroKicker,
+    contentHeroTitle,
+    contentHeroDescription,
+    contentHeroImage,
+    contentHeroButton,
+    contentPromoTag,
+    contentPromoTitle,
+    contentPromoButton,
+    contentNewsletterTitle,
+    contentNewsletterDescription,
+  ].forEach((input) => {
+    input?.addEventListener("input", () => {
+      setContentDirty(true);
+    });
   });
 
   if (reportRange) {
     reportRange.addEventListener("change", (event) => {
       state.reportRange = event.target.value;
+      persistAdminUiState();
       renderReports();
     });
   }
@@ -2230,6 +2941,7 @@ function attachEvents() {
   if (reportRevenueMode) {
     reportRevenueMode.addEventListener("change", (event) => {
       state.reportRevenueMode = event.target.value;
+      persistAdminUiState();
       renderReports();
     });
   }
@@ -2241,6 +2953,7 @@ function attachEvents() {
   if (ordersSearch) {
     ordersSearch.addEventListener("input", (event) => {
       state.orderSearch = event.target.value;
+      persistAdminUiState();
       renderOrders();
     });
   }
@@ -2248,6 +2961,7 @@ function attachEvents() {
   if (ordersStatusFilter) {
     ordersStatusFilter.addEventListener("change", (event) => {
       state.orderStatusFilter = event.target.value;
+      persistAdminUiState();
       renderOrders();
     });
   }
@@ -2255,6 +2969,7 @@ function attachEvents() {
   if (ordersDateFrom) {
     ordersDateFrom.addEventListener("change", (event) => {
       state.orderDateFrom = event.target.value;
+      persistAdminUiState();
       renderOrders();
     });
   }
@@ -2262,6 +2977,15 @@ function attachEvents() {
   if (ordersDateTo) {
     ordersDateTo.addEventListener("change", (event) => {
       state.orderDateTo = event.target.value;
+      persistAdminUiState();
+      renderOrders();
+    });
+  }
+
+  if (ordersSort) {
+    ordersSort.addEventListener("change", (event) => {
+      state.orderSort = ORDER_SORT_SET.has(event.target.value) ? event.target.value : "recent-desc";
+      persistAdminUiState();
       renderOrders();
     });
   }
@@ -2270,6 +2994,9 @@ function attachEvents() {
     ordersResetFilters.addEventListener("click", () => {
       if (!requireSession()) return;
       resetOrdersFilters();
+      state.orderSort = "recent-desc";
+      syncOrdersFilterInputs();
+      persistAdminUiState();
       renderOrders();
     });
   }
@@ -2291,9 +3018,65 @@ function attachEvents() {
       const nextStatus = button.dataset.status || "all";
       state.orderStatusFilter = ORDER_STATUS_SET.has(nextStatus) ? nextStatus : "all";
       syncOrdersFilterInputs();
+      persistAdminUiState();
       renderOrders();
     });
   }
+
+  ordersPresets?.addEventListener("click", (event) => {
+    if (!requireSession()) return;
+
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+
+    const button = target.closest("[data-preset]");
+    if (!(button instanceof HTMLButtonElement)) return;
+
+    resetOrdersFilters();
+    applyOrdersPreset(String(button.dataset.preset || ""));
+    syncOrdersFilterInputs();
+    persistAdminUiState();
+    renderOrders();
+  });
+
+  applyOrderStatusBtn?.addEventListener("click", async () => {
+    if (!requireSession()) return;
+
+    const nextStatus = String(bulkOrderStatus?.value || "").trim();
+    if (!ORDER_STATUS_SET.has(nextStatus)) {
+      setMessage(ordersMsg, "Selecciona un estado valido para aplicar.", true);
+      return;
+    }
+
+    const { rows, error } = getFilteredOrders();
+    if (error) {
+      setMessage(ordersMsg, error, true);
+      return;
+    }
+
+    if (!rows.length) {
+      setMessage(ordersMsg, "No hay pedidos filtrados para actualizar.", true);
+      return;
+    }
+
+    let changedCount = 0;
+    rows.forEach((order) => {
+      if (order.status === nextStatus) return;
+      order.status = nextStatus;
+      appendOrderStatusHistory(order, nextStatus, "admin", "Actualizacion masiva");
+      changedCount += 1;
+    });
+
+    if (!changedCount) {
+      setMessage(ordersMsg, "Los pedidos filtrados ya tienen ese estado.");
+      return;
+    }
+
+    await handleStorePersistence(
+      ordersMsg,
+      `${changedCount} pedido(s) actualizados a ${formatOrderStatus(nextStatus).toLowerCase()}.`
+    );
+  });
 
   ordersList.addEventListener("change", async (event) => {
     if (!requireSession()) return;
@@ -2337,18 +3120,43 @@ function attachEvents() {
       return;
     }
 
+    if (action === "copy-order") {
+      try {
+        await navigator.clipboard.writeText(buildOrderClipboardSummary(order));
+        setMessage(ordersMsg, `Resumen del pedido ${order.id} copiado.`);
+      } catch {
+        setMessage(ordersMsg, "No se pudo copiar el resumen del pedido.", true);
+      }
+      return;
+    }
+
     if (action !== "delete-order") return;
 
     const confirmed = confirm("Eliminar este pedido?");
     if (!confirmed) return;
 
+    const orderIndex = state.orders.findIndex((entry) => entry.id === id);
+    const removedOrder = deepClonePlain(order);
     state.orders = state.orders.filter((order) => order.id !== id);
-    await handleStorePersistence(ordersMsg, "Pedido eliminado.");
+    const persisted = await handleStorePersistence(ordersMsg, "Pedido eliminado.");
+    if (persisted && removedOrder) {
+      rememberUndoAction({
+        type: "restore-order",
+        scope: "orders",
+        message: `Pedido ${order.id} eliminado. Puedes deshacerlo durante unos segundos.`,
+        successMessage: "Pedido restaurado.",
+        payload: {
+          order: removedOrder,
+          index: orderIndex,
+        },
+      });
+    }
   });
 
   clearCompletedOrders.addEventListener("click", async () => {
     if (!requireSession()) return;
 
+    const previousOrders = deepClonePlain(state.orders);
     const previous = state.orders.length;
     state.orders = state.orders.filter((order) => order.status !== "completado");
 
@@ -2357,7 +3165,18 @@ function attachEvents() {
       return;
     }
 
-    await handleStorePersistence(ordersMsg, "Pedidos completados eliminados.");
+    const persisted = await handleStorePersistence(ordersMsg, "Pedidos completados eliminados.");
+    if (persisted && previousOrders) {
+      rememberUndoAction({
+        type: "restore-orders-snapshot",
+        scope: "orders",
+        message: "Se limpiaron los pedidos completados. Puedes restaurarlos por unos segundos.",
+        successMessage: "Pedidos restaurados.",
+        payload: {
+          orders: previousOrders,
+        },
+      });
+    }
   });
 
   securityForm.addEventListener("submit", async (event) => {
@@ -2394,6 +3213,7 @@ function attachEvents() {
       loginUser.value = state.credentials.username;
       fillSecurityForm();
       sessionLabel.textContent = `Sesion activa: ${state.credentials.username}`;
+      setSyncStatus("Credenciales actualizadas", "ok", true);
       setMessage(securityMsg, "Credenciales actualizadas.");
     } catch (error) {
       const text =
@@ -2416,29 +3236,73 @@ function attachEvents() {
     void resetStore();
   });
 
+  undoActionBtn?.addEventListener("click", () => {
+    void undoLastAction();
+  });
+
+  quickAddProductBtn?.addEventListener("click", () => {
+    resetProductForm();
+    scrollToPanelSection("productsSection");
+    productName.focus();
+  });
+
+  quickLowStockBtn?.addEventListener("click", () => {
+    state.productStockFilter = "low";
+    state.productCategoryFilter = "all";
+    syncProductFilterInputs();
+    persistAdminUiState();
+    renderProductTable();
+    scrollToPanelSection("productsSection");
+  });
+
+  quickPendingOrdersBtn?.addEventListener("click", () => {
+    resetOrdersFilters();
+    state.orderStatusFilter = "pendiente";
+    syncOrdersFilterInputs();
+    persistAdminUiState();
+    renderOrders();
+    scrollToPanelSection("ordersSection");
+  });
+
+  refreshAdminBtn?.addEventListener("click", () => {
+    void refreshAdminData({ showFeedback: true });
+  });
+
+  window.addEventListener("keydown", handleGlobalShortcuts);
+
   window.addEventListener("focus", () => {
     if (!isSessionActive()) return;
 
-    void syncAdminStateFromServer()
-      .then(() => {
+    void refreshAdminData()
+      .then((updated) => {
+        if (!updated) return;
         if (state.editingProductId && !state.products.some((product) => product.id === state.editingProductId)) {
           resetProductForm();
         }
-        refreshAll();
       })
       .catch(() => {});
+  });
+
+  window.addEventListener("beforeunload", (event) => {
+    if (!state.productFormDirty && !state.contentFormDirty) return;
+    event.preventDefault();
+    event.returnValue = "";
   });
 }
 
 async function init() {
+  loadAdminUiState();
   setUploadBusyState(false);
   updateProductImagePreview();
   syncProductFilterInputs();
   syncOrdersFilterInputs();
   syncReportInputs();
   loginUser.value = state.credentials.username;
+  renderSyncStatus();
+  renderUndoBar();
   attachEvents();
   setupPanelNav();
+  window.setInterval(renderSyncStatus, 30000);
 
   try {
     const session = await apiFetchJson(ADMIN_SESSION_ENDPOINT);
