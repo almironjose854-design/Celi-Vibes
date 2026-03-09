@@ -1,10 +1,10 @@
-# fly.toml app configuration file generated for celivibes on 2026-03-09T14:41:58Z
+# fly.toml app configuration file generated for celi-vibes on 2026-03-09T14:51:17Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'celivibes'
-primary_region = 'iad'
+app = 'celi-vibes'
+primary_region = 'ams'
 
 [build]
 
